@@ -11,11 +11,13 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { services, serverActions, isValidServiceName, isValidServerAction, isValidServiceAction, isValidActionType } from "./manage";
 import { LoginMessageFailure, LoginMessageSuccess, ManageMessageFailure, ManageMessageSuccess, Stats, StatusMessage } from "./types";
+import 'dotenv/config';
 
 // Constants
-const port = process.env.PORT || 3000;
-const secret = process.env.API_SECRET || "secret";
-const admin = bcrypt.hashSync("password", 8);
+const port = process.env.PORT as unknown as number
+const secret = process.env.API_SECRET as string;
+const password = process.env.ADMIN_PASSWORD as string;
+const admin = bcrypt.hashSync(password, 8);
 
 // Data
 const stats: Stats = {
