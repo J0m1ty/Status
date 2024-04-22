@@ -51,7 +51,7 @@ const services: Service[] = [
         name: "status",
         process: {
             type: "port",
-            value: 3000
+            value: 3001
         }
     },
     {

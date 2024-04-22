@@ -3,6 +3,7 @@ import { Box, Divider, FormControl, Grid, InputLabel, ListSubheader, MenuItem, S
 import ServiceCard from "./ServiceCard";
 import { Stats } from '../../src/types';
 import { Tag, FilterOption, SortOption, Service } from '../types';
+import { web } from 'webpack';
 
 const services: Service[] = [
     {
@@ -180,13 +181,29 @@ const sorts: { [key in SortOption]: (a: Service, b: Service) => number } = {
 export default function StatusContainer() {
     const [statuses, setStatuses] = React.useState<Service[]>(services);
 
-    const [webSocket] = React.useState(new WebSocket('wss://status.jomity.net'));
+    const [webSocket, setWebSocket] = React.useState<WebSocket | null>(null);
 
     const [filter, setFilter] = React.useState<FilterOption>("");
 
     const [sort, setSort] = React.useState<SortOption>("type");
+
+    React.useEffect(() => {
+        if (webSocket) {
+            webSocket.close();
+        }
+
+        console.log("INIT WEBSOCKET")
+        const ws = new WebSocket("wss://status.jomity.net");
+        setWebSocket(ws);
+
+        return () => {
+            ws.close();
+        }
+    }, []);
     
     useEffect(() => {
+        if (!webSocket) return;
+
         webSocket.addEventListener("message", (event) => {
             const data: Stats = JSON.parse(event.data);
     

@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import slowDown from "express-slow-down";
 import rateLimit from "express-rate-limit";
-import { createServer } from "https";
+import { createServer } from "http";
 import { readFileSync } from "fs";
 import { WebSocketServer } from "ws";
 import cors from "cors";
@@ -14,7 +14,7 @@ import { LoginMessageFailure, LoginMessageSuccess, ManageMessageFailure, ManageM
 import 'dotenv/config';
 
 // Constants
-const port = process.env.PORT as unknown as number
+const port = 3001;
 const secret = process.env.API_SECRET as string;
 const password = process.env.ADMIN_PASSWORD as string;
 const admin = bcrypt.hashSync(password, 8);
@@ -34,23 +34,15 @@ const stats: Stats = {
 // Functions
 const updateStats = (s: Stats): void => {
     Object.assign(stats, s);
-}
-
-const update = () => {
-    collectStats((stats) => {
-        updateStats(stats);
-
-        wss.clients.forEach((client) => {
-            client.send(JSON.stringify(stats));
-        });
-    });
-}
+};
 
 // Express app setup
 const app = express();
 app.use(cors());
-app.enable("trust proxy");
+app.set('trust proxy', 1);
+app.get('/ip', (request, response) => response.send(request.ip));
 app.use(express.static(join(__dirname, "../public")));
+
 
 // Rate limiting and slowdown middleware
 const speedLimiter = slowDown({
@@ -67,6 +59,10 @@ const limiter = rateLimit({
 // Middleware
 app.use("/api", speedLimiter);
 app.use("/api", limiter);
+app.use("/api/login", speedLimiter);
+app.use("/api/login", limiter);
+app.use("/api/manage", speedLimiter);
+app.use("/api/manage", limiter);
 app.use("/api", express.json());
 app.use("/api", express.urlencoded({ extended: true }));
 
@@ -200,20 +196,24 @@ app.get("/", (req: Request, res: Response, next: NextFunction) => {
 });
 
 // HTTPS server and WebSocket setup
-const server = createServer({
-    cert: readFileSync('/etc/letsencrypt/live/jomity.net/cert.pem'),
-    key: readFileSync('/etc/letsencrypt/live/jomity.net/privkey.pem')
-}, app);
+const server = createServer(app);
 
 const wss = new WebSocketServer({ server });
 
+// Update stats
+const update = () => {
+    collectStats((stats) => {
+        updateStats(stats);
+
+        wss.clients.forEach((client) => {
+            client.send(JSON.stringify(stats));
+        });
+    });
+}
+
 // WebSocket connection handling
 wss.addListener("connection", (ws) => {
-    const out: StatusMessage = {
-        data: stats
-    };
-
-    ws.send(JSON.stringify(out));
+    ws.send(JSON.stringify(stats));
 });
 
 // Start the server
