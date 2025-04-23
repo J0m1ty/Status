@@ -7,10 +7,15 @@ import { statusRouter } from './trpc/status.js';
 import { trpcServer } from '@hono/trpc-server';
 import { sign } from 'hono/jwt';
 import { connect, disconnect, list } from './pm2/api.js';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { existsSync, statSync } from 'fs';
+import { readFile } from 'fs/promises';
+import { serveStatic } from '@hono/node-server/serve-static';
 
 const app = new Hono();
 
-app.get('/events', async (c) => {
+app.get('/api/events', async (c) => {
     return streamSSE(c, async (stream) => {
         let id = 0;
         await connect();
@@ -32,7 +37,7 @@ app.get('/events', async (c) => {
     });
 });
 
-app.post('/login', async (c) => {
+app.post('/api/login', async (c) => {
     const { username, password } = await c.req.json();
 
     if (username != env.ADMIN_USER || password != env.ADMIN_PASS) {
@@ -43,11 +48,15 @@ app.post('/login', async (c) => {
     return c.json({ token });
 });
 
-app.use('/trpc/*', auth, trpcServer({ router: statusRouter }));
+app.use('/api/trpc', auth);
+app.use('/api/trpc/*', trpcServer({ router: statusRouter, endpoint: '/api/trpc' }));
+
+app.use('/*', serveStatic({ root: '../frontend/dist' }));
 
 serve({
     fetch: app.fetch,
     port: env.PORT
 }, (info) => {
+    console.log(`Current directory: ${process.cwd()}`);
     console.log(`Server is running on http://localhost:${info.port}`);
 });

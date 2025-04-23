@@ -2,6 +2,7 @@ import pm2, { type ProcessDescription } from 'pm2';
 import { z } from 'zod';
 
 export const ProcessStatusSchema = z.object({
+    pm_id: z.number(),
     name: z.string(),
     pid: z.number(),
     status: z.string(),
@@ -22,6 +23,7 @@ export const disconnect = () =>
     });
 
 export const formatProcess = (proc: ProcessDescription): ProcessStatus => ({
+    pm_id: proc.pm_id ?? -1,
     name: proc.name ?? 'unnamed',
     pid: proc.pid ?? 0,
     status: proc.pm2_env?.status ?? 'unknown',
