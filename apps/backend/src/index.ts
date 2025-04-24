@@ -1,62 +1,54 @@
-import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
-import { env } from './env.js'
-import { streamSSE } from 'hono/streaming'
-import { auth } from './middleware/auth.js';
-import { statusRouter } from './trpc/status.js';
-import { trpcServer } from '@hono/trpc-server';
-import { sign } from 'hono/jwt';
-import { connect, disconnect, list } from './pm2/api.js';
-import { dirname, join } from 'path';
+import { env } from './env.js';
+import { PM2 } from './api.js';
+import { dirname, extname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, statSync } from 'fs';
-import { readFile } from 'fs/promises';
-import { serveStatic } from '@hono/node-server/serve-static';
+import { createStreamableApp } from './see.js';
+import { existsSync, readFileSync, statSync } from 'fs';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './routers.js';
 
-const app = new Hono();
+const root = join(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
 
-app.get('/api/events', async (c) => {
-    return streamSSE(c, async (stream) => {
-        let id = 0;
-        await connect();
+const mime = (ext: string) => {
+    return ({
+        'js': 'application/javascript',
+        'css': 'text/css',
+        'html': 'text/html',
+        'json': 'application/json',
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'svg': 'image/svg+xml',
+    }[ext.slice(1)] ?? 'application/octet-stream');
+}
 
-        try {
-            while (true) {
-                const processes = await list();
-                await stream.writeSSE({
-                    data: JSON.stringify(processes),
-                    event: 'status',
-                    id: `${id++}`,
-                });
+createStreamableApp().streamSSE({
+    path: '/api/events',
+    event: 'status',
+    delay: 1000,
+    payload: PM2.list,
+}).get('/*', async (res, req) => {
+    const url = req.getUrl();
+    let file = join(root, url);
 
-                await stream.sleep(1000);
-            }
-        } finally {
-            await disconnect();
-        }
-    });
-});
-
-app.post('/api/login', async (c) => {
-    const { username, password } = await c.req.json();
-
-    if (username != env.ADMIN_USER || password != env.ADMIN_PASS) {
-        return c.json({ error: 'Invalid credentials' }, 401);
+    if (!existsSync(file) || statSync(file).isDirectory()) {
+        file = join(root, 'index.html');
     }
 
-    const token = await sign({ sub: username, exp: Math.floor(Date.now() / 1000) + 3600 }, env.JWT_SECRET, 'HS256');
-    return c.json({ token });
+    const data = readFileSync(file);
+    res.cork(() => {
+        res.writeHeader('Content-Type', mime(extname(file)));
+        res.write(data);
+        res.end();
+    });
+}).listen(env.MAIN_PORT, (token) => {
+    if (token) {
+        console.log(`${process.cwd()}`);
+        console.log(`Server is running on http://localhost:${env.MAIN_PORT}`);
+    } else {
+        console.log(`Failed to start server`);
+    }
 });
 
-app.use('/api/trpc', auth);
-app.use('/api/trpc/*', trpcServer({ router: statusRouter, endpoint: '/api/trpc' }));
+createHTTPServer({ router: appRouter }).listen(env.TRPC_PORT);
 
-app.use('/*', serveStatic({ root: '../frontend/dist' }));
-
-serve({
-    fetch: app.fetch,
-    port: env.PORT
-}, (info) => {
-    console.log(`Current directory: ${process.cwd()}`);
-    console.log(`Server is running on http://localhost:${info.port}`);
-});
+process.on('exit', PM2.disconnect);

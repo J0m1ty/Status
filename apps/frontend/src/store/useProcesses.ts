@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ProcessStatus } from '../../../backend/src/pm2/api';
+import { ProcessStatus } from '../../../backend/src/api';
 
 interface State {
     processes: ProcessStatus[];

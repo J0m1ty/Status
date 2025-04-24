@@ -16,5 +16,8 @@ export default defineConfig({
                 target: 'http://localhost:3003',
             }
         }
+    },
+    compilation: {
+        lazyCompilation: false
     }
 });

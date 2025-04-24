@@ -5,7 +5,7 @@ import { useTRPC } from '../utils/trpc';
 import { useAuth } from '../store/useAuth';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from 'react-aria-components';
-import { ProcessStatus } from '../../../backend/src/pm2/api';
+import { ProcessStatus } from '../../../backend/src/api';
 
 const formatUptime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
