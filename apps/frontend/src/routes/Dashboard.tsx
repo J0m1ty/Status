@@ -1,16 +1,15 @@
-import { useEffect } from "react";
-import ProcessTable from "../components/ProcessTable"
-import { initSSE } from "../store/useProcesses";
+import { Header } from "../components/Header";
+import { useEventSource } from "../store/useEventSource";
 
 export const Dashboard = () => {
-    useEffect(() => initSSE(), []);
+    useEventSource();
 
     return (
-        <main className="min-h-screen bg-gray-50">
-            <div className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-3xl font-semibold text-gray-900 mb-6">Process List</h1>
-                <ProcessTable />
-            </div>
-        </main>
+        <div className="w-full h-svh flex flex-col bg-white dark:bg-stone-900">
+            <Header />
+            <main className="flex-1 flex flex-col justify-start items-start bg-[radial-gradient(#dcdee3_1px,transparent_1px)] dark:bg-[radial-gradient(#413c37_1px,transparent_1px)] [background-size:16px_16px] overflow-y-auto">
+                
+            </main>
+        </div>
     )
 }

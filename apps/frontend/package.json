@@ -1,20 +1,21 @@
 {
   "name": "status-frontend",
+  "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "farm start",
-    "start": "farm start",
-    "build": "farm build",
-    "preview": "farm preview",
-    "clean": "farm clean"
+    "dev": "vite dev",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-query-devtools": "^5.74.6",
-    "@tanstack/react-table": "^8.21.3",
     "@trpc/client": "^11.1.1",
     "@trpc/tanstack-react-query": "^11.1.1",
-    "add": "^2.0.6",
     "react": "18",
     "react-aria-components": "^1.8.0",
     "react-dom": "18",
@@ -23,13 +24,18 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@farmfe/cli": "1.0.4",
-    "@farmfe/core": "1.7.4",
-    "@farmfe/js-plugin-tailwindcss": "^0.0.13",
-    "@farmfe/plugin-react": "^1.2.0",
+    "@eslint/js": "^9.25.1",
+    "@types/node": "^20.11.17",
     "@types/react": "18",
     "@types/react-dom": "18",
+    "@vitejs/plugin-react-swc": "^3.9.0",
     "core-js": "^3.36.1",
-    "react-refresh": "^0.14.0"
+    "eslint": "^9.25.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "react-refresh": "^0.14.0",
+    "typescript-eslint": "^8.31.0",
+    "vite": "^6.3.3",
+    "vite-plugin-html": "^3.2.2"
   }
 }

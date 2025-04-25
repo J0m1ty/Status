@@ -1,1 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 @import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+  --font-display: "Space Mono", monospace; 
+  
+  --animate-pulse-error: pulse-error 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-pulse-success: pulse-success 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-pulse-success-dark: pulse-success-dark 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes pulse-error {
+    0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.8); }
+    50% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+  }
+
+  @keyframes pulse-success {
+    0%, 100% { box-shadow: 0 0 12px rgba(36, 201, 147, 1); }
+    50% { box-shadow: 0 0 5px rgba(36, 201, 147, 0.3); }
+  }
+
+  @keyframes pulse-success-dark {
+    0%, 100% { box-shadow: 0 0 12px rgba(12, 145, 101, 0.8); }
+    50% { box-shadow: 0 0 5px rgba(12, 145, 101, 0.2); }
+  }
+}
+
+@layer base {
+  html, body {
+    font-family: var(--font-display);
+    height: 100svh;
+    margin: 0;
+  }
+}

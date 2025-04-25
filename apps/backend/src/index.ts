@@ -5,9 +5,11 @@ import { fileURLToPath } from 'url';
 import { createStreamableApp } from './see.js';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { appRouter } from './routers.js';
+import { appRouter, createContext } from './routers.js';
+import { readFile } from 'fs/promises';
+import { App } from 'uWebSockets.js';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
 
 const mime = (ext: string) => {
     return ({
@@ -25,30 +27,42 @@ createStreamableApp().streamSSE({
     path: '/api/events',
     event: 'status',
     delay: 1000,
-    payload: PM2.list,
+    payload: PM2.list
 }).get('/*', async (res, req) => {
+    res.onAborted(() => {
+        res.aborted = true;
+    });
+
     const url = req.getUrl();
-    let file = join(root, url);
+    let file = join(ROOT, url);
 
     if (!existsSync(file) || statSync(file).isDirectory()) {
-        file = join(root, 'index.html');
+        file = join(ROOT, 'index.html');
     }
 
-    const data = readFileSync(file);
-    res.cork(() => {
-        res.writeHeader('Content-Type', mime(extname(file)));
-        res.write(data);
-        res.end();
-    });
+    const data = await readFile(file);
+
+    if (!res.aborted) {
+        res.cork(() => {
+            res.writeHeader('Content-Type', mime(extname(file)));
+            res.write(data);
+            res.end();
+        });
+    }
 }).listen(env.MAIN_PORT, (token) => {
     if (token) {
-        console.log(`${process.cwd()}`);
-        console.log(`Server is running on http://localhost:${env.MAIN_PORT}`);
+        console.log(`Web server is running on :${env.MAIN_PORT}`);
     } else {
         console.log(`Failed to start server`);
     }
 });
 
-createHTTPServer({ router: appRouter }).listen(env.TRPC_PORT);
+createHTTPServer({
+    router: appRouter,
+    createContext,
+    basePath: '/api/',
+}).listen(env.TRPC_PORT, () => {
+    console.log(`TRPC server is running on :${env.TRPC_PORT}`);
+});
 
 process.on('exit', PM2.disconnect);

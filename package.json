@@ -5,7 +5,5 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "serve": "pm2 startOrReload ecosystem.config.js"
-  },
-  "author": "Jomity",
-  "license": "ISC"
+  }
 }
