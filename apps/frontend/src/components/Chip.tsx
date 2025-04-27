@@ -1,5 +1,3 @@
-
-
 export const Chip = ({ label, className = '' }: { label: string; className?: string }) => {
     return (
         <div

@@ -3,6 +3,7 @@ import { Location, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../store/useAuth";
 import { useMutation } from "@tanstack/react-query";
 import { TextField, Button, Label, Input } from 'react-aria-components';
+import { useTRPC } from "../utils/trpc";
 
 export const Login = () => {
     const [username, setUser] = useState('');
@@ -11,27 +12,21 @@ export const Login = () => {
     const { state } = useLocation() as { state: { from?: Location } };
     const { setToken } = useAuth();
 
-    const login = useMutation({
-        mutationFn: async () => {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
+    const trpc = useTRPC();
 
-            if (!response.ok) throw new Error('Bad credentials');
-
-            return (await response.json()) as { token: string };
-        },
-        onSuccess: (data) => {
-            setToken(data.token);
-            navigate(state?.from?.pathname ?? '/', { replace: true });
-        },
-    });
+    const loginMutation = useMutation(trpc.auth.login.mutationOptions());
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        login.mutate();
+        loginMutation.mutate({ username, password }, {
+            onSuccess: (data) => {
+                setToken(data.token);
+                navigate(state?.from?.pathname ?? '/', { replace: true });
+            },
+            onError: (error) => {
+                console.error('Login failed:', error);
+            }
+        });
     }
 
     return (
@@ -67,12 +62,12 @@ export const Login = () => {
                 <Button
                     type="submit"
                     className="w-full px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    isDisabled={login.isPending}
+                    isDisabled={loginMutation.isPending}
                 >
-                    {login.isPending ? 'Signing in…' : 'Sign in'}
+                    {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
                 </Button>
 
-                {login.error && <p className="text-red-600 text-sm">{login.error.message}</p>}
+                {loginMutation.error && <p className="text-red-600 text-sm">{loginMutation.error.message}</p>}
             </form>
         </div>
     )

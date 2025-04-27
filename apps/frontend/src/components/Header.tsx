@@ -6,20 +6,22 @@ import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { useTheme } from "../store/useTheme";
 
 export const Header = () => {
-    const { isLoading } = useProcesses();
+    const { loading, error } = useProcesses();
     const { theme, toggleTheme } = useTheme();
 
+    const connected = !loading && !error;
+
     return (
-        <header className="flex flex-row justify-between items-center w-full bg-blue-300 border-b-2 dark:border-gray-100  py-2 px-2 dark:bg-gray-800 dark:text-white">
+        <header className="flex flex-row justify-between items-center w-full bg-white border-b-2 dark:border-neutral-100  py-2 px-2 dark:bg-neutral-900 dark:text-white">
             <div className="flex-1 flex items-center">
                 <h1 className="text-xl font-bold">jomity.net</h1>
             </div>
             <div className="flex flex-row items-center gap-3">
-                <Link href="https://github.com" className="hover:drop-shadow-[0_1px_5px_rgba(0,0,0,0.5)] transition duration-200">
-                    <img src={github} alt="GitHub" className="size-[28px] dark:invert dark:brightness-0" />
+                <Link href="https://github.com/J0m1ty/Status" className="hover:drop-shadow-[0_1px_5px_rgba(0,0,0,0.5)] dark:hover:drop-shadow-[0_1px_5px_rgba(255,255,255,0.5)] transition duration-200">
+                    <img src={github} alt="GitHub" className="size-[26px] dark:invert dark:brightness-0" />
                 </Link>
                 <Button
-                    className="cursor-pointer hover:drop-shadow-[0_1px_5px_rgba(0,0,0,0.5)] transition duration-200"
+                    className="hover:drop-shadow-[0_1px_5px_rgba(0,0,0,0.5)] dark:hover:drop-shadow-[0_1px_5px_rgba(255,255,255,0.5)] transition duration-200"
                     onPress={() => {
                         toggleTheme();
                     }}
@@ -30,11 +32,11 @@ export const Header = () => {
                     </div>
                 </Button>
                  <Chip
-                    label={isLoading ? "API Disconnected" : "API Connected"}
+                    label={connected ? "API Connected" : "API Disconnected"}
                     className={`${
-                        isLoading 
-                            ? "text-red-800 bg-red-100 dark:text-red-100 dark:bg-red-800 [animation:var(--animate-pulse-error)]" 
-                            : "text-emerald-800 bg-emerald-100 dark:text-emerald-100 dark:bg-emerald-800 [animation:var(--animate-pulse-success)] dark:[animation:var(--animate-pulse-success)]"
+                        connected 
+                            ? "text-emerald-800 bg-emerald-100 dark:text-emerald-100 dark:bg-emerald-800 [animation:var(--animate-pulse-success)] dark:[animation:var(--animate-pulse-success)]"
+                            : "text-red-800 bg-red-100 dark:text-red-100 dark:bg-red-800 [animation:var(--animate-pulse-error)]"
                     }`}
                 />
             </div>

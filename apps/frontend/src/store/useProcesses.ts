@@ -1,20 +1,20 @@
 import { create } from 'zustand';
-import { ProcessStatus } from '../../../backend/src/api';
+import type { ProcessStatus } from '../../../backend/src/types';
 
 interface ProcessState {
-    isLoading: boolean;
     processes: ProcessStatus[];
-    error: string | null;
+    loading: boolean;
+    error: Error | null;
     set: (processes: ProcessStatus[]) => void;
-    setLoading: (isLoading: boolean) => void;
-    setError: (error: string | null) => void;
+    setLoading: (loading: boolean) => void;
+    setError: (error: Error | null) => void;
 }
 
 export const useProcesses = create<ProcessState>((set) => ({
-    isLoading: false,
     processes: [],
+    loading: true,
     error: null,
-    set: (processes) => set({ processes, error: null }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error })
+    set: (processes: ProcessStatus[]) => set({ processes }),
+    setLoading: (loading: boolean) => set({ loading }),
+    setError: (error: Error | null) => set({ error }),
 }));

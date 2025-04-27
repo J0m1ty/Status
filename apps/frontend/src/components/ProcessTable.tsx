@@ -1,24 +1,183 @@
-// import { useProcesses } from '../store/useProcesses'
-// import { useMemo, useState } from 'react'
-// import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-// import { useTRPC } from '../utils/trpc';
-// import { useAuth } from '../store/useAuth';
-// import { useMutation } from '@tanstack/react-query';
-// import { Button } from 'react-aria-components';
-// import { ProcessStatus } from '../../../backend/src/api';
+import { ColumnDef, useReactTable, getCoreRowModel, flexRender, getSortedRowModel, SortingState } from '@tanstack/react-table';
+import { useMemo, useState } from "react";
+import { useProcesses } from "../store/useProcesses";
+import type { ProcessStatus } from '../../../backend/src/types';
+import { Button } from 'react-aria-components';
+import { useAuth } from '../store/useAuth';
+import { Skeleton } from './Skeleton';
+import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/solid';
+import { useMutation } from '@tanstack/react-query';
+import { useTRPC } from "../utils/trpc";
 
-// const formatUptime = (ms: number) => {
-//     const seconds = Math.floor(ms / 1000);
-//     const minutes = Math.floor(seconds / 60);
-//     const hours = Math.floor(minutes / 60);
-//     const days = Math.floor(hours / 24);
+const formatUptime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    const parts: string[] = [];
+    if (days) parts.push(`${days}d`);
+    if (hours) parts.push(`${hours}h`);
+    if (minutes && parts.length < 2) parts.push(`${minutes}m`);
+    if (secs && parts.length < 2) parts.push(`${secs}s`);
+    if (parts.length === 0 && secs === 0) return '0s';
+    return parts.slice(0, 2).join(' ');
+}
 
-//     if (days > 0) return `${days}d ${hours % 24}h`;
-//     if (hours > 0) return `${hours}h ${minutes % 60}m`;
-//     if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-//     return `${seconds}s`;
-// };
+const formatCPU = (percent: number) => {
+    return `${percent.toFixed(percent % 1 === 0 ? 0 : 1)}%`;
+}
 
+const formatMemory = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const value = bytes / Math.pow(k, i);
+    return `${value.toFixed(1)}${units[i]}`;
+}
+
+export const ProcessTable = () => {
+    const { processes: data, loading, error } = useProcesses();
+    const { authed } = useAuth();
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const { status: { start, restart, stop } } = useTRPC();
+
+    const startMutation = useMutation(start.mutationOptions());
+    const restartMutation = useMutation(restart.mutationOptions());
+    const stopMutation = useMutation(stop.mutationOptions());
+
+    const ready = !loading && !error;
+
+    const columns = useMemo<ColumnDef<ProcessStatus>[]>(() => {
+        const base: ColumnDef<ProcessStatus>[] = [
+            {
+                accessorKey: 'name',
+                header: 'Process Name',
+                cell: ({ getValue }) => loading
+                    ? <Skeleton placeholder={'landing-page'} />
+                    : String(getValue()),
+                enableSorting: ready
+            },
+            {
+                accessorKey: 'pid',
+                header: 'PID',
+                cell: ({ getValue }) => loading ? <Skeleton placeholder={'0000'} /> : String(getValue()),
+                enableSorting: ready
+            },
+            {
+                id: 'uptime',
+                accessorFn: row => row.uptime,
+                header: 'Uptime',
+                cell: ({ row }) => loading
+                    ? <Skeleton placeholder={'0d 0h'} />
+                    : formatUptime(row.original.uptime),
+                enableSorting: ready
+            },
+            {
+                id: 'cpu',
+                accessorFn: row => row.cpu,
+                header: 'CPU',
+                cell: ({ row }) => loading
+                    ? <Skeleton placeholder={'0%'} />
+                    : formatCPU(row.original.cpu),
+                enableSorting: ready
+            },
+            {
+                id: 'memory',
+                accessorFn: row => row.memory,
+                header: 'Memory',
+                cell: ({ row }) => loading
+                    ? <Skeleton placeholder={'00.0MB'} />
+                    : formatMemory(row.original.memory),
+                enableSorting: ready
+            }
+        ];
+
+        if (authed) {
+            base.push({
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => loading
+                    ? <Skeleton placeholder={'Restart Stop'} />
+                    : <div className="flex gap-2 text-blue-500 justify-center">
+                        {row.original.status == 'stopped' ? <Button onPress={() => startMutation.mutate(row.original.pm_id)} className="hover:text-slate-600 underline">
+                            Start
+                        </Button> : null}
+                        {row.original.status == 'online' ? <Button onPress={() => restartMutation.mutate(row.original.pm_id)} className="hover:text-slate-600 underline">
+                            Restart
+                        </Button> : null}
+                        {row.original.status == 'online' ? <Button onPress={() => stopMutation.mutate(row.original.pm_id)} className="hover:text-slate-600 underline">
+                            Stop
+                        </Button> : null}
+                    </div>
+            });
+        }
+
+        return base;
+    }, [loading, authed]);
+
+    const table = useReactTable({
+        columns,
+        data,
+        state: {
+            sorting,
+        },
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+    });
+
+    return (
+        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <table className="w-full text-md bg-white">
+                <thead className="bg-gray-50 border-b-2 border-black font-bold">
+                    {table.getHeaderGroups().map(hg => (
+                        <tr key={hg.id}>
+                            {hg.headers.map(header => (
+                                <th
+                                    key={header.id}
+                                    colSpan={header.colSpan}
+                                    className={`select-none justify-center ${header.column.getCanSort() && ready ? 'hover:bg-gray-200' : ''} px-4`}
+                                    onClick={header.column.getToggleSortingHandler()}
+                                >
+                                    <div className={`flex items-center gap-1 ${header.column.getIndex() == 0 ? "justify-start" : "justify-center"}`}>
+                                        {flexRender(header.column.columnDef.header, header.getContext())}
+                                        {ready ? {
+                                            asc: <ArrowDownIcon className="size-4" />,
+                                            desc: <ArrowUpIcon className="size-4" />
+                                        }[header.column.getIsSorted() as string] ?? null : null}
+                                    </div>
+                                </th>
+                            ))}
+                        </tr>
+                    ))}
+                </thead>
+                {error ?
+                    <tbody >
+                        <tr>
+                            <td colSpan={columns.length} className="px-10 py-4 text-center text-red-600">
+                                Error loading processes: {error.message}
+                            </td>
+                        </tr>
+                    </tbody>
+                    : <tbody>
+                        {table.getRowModel().rows.map(row => (
+                            <tr key={row.id} className="hover:bg-gray-50">
+                                {row.getVisibleCells().map(cell => (
+                                    <td key={cell.id} className={`px-4 py-1 ${cell.column.getIndex() == 0 ? "text-left" : "text-center"}`}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>}
+            </table>
+        </div>
+    )
+}
+
+// old:
 // export default function ProcessTable() {
 //     const trpc = useTRPC();
 //     const data = useProcesses(s => s.processes);
