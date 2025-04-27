@@ -7,7 +7,7 @@ export default defineConfig({
     server: {
         port: 9000,
         proxy: {
-            '/api/events': {
+            '/events': {
                 target: 'http://localhost:3003',
                 changeOrigin: true
             },

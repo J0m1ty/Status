@@ -24,7 +24,7 @@ const mime = (ext: string) => {
 }
 
 createStreamableApp().streamSSE({
-    path: '/api/events',
+    path: '/events',
     event: 'status',
     delay: 1000,
     payload: PM2.list

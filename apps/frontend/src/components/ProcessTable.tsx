@@ -129,16 +129,16 @@ export const ProcessTable = () => {
     });
 
     return (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-            <table className="w-full text-md bg-white">
-                <thead className="bg-gray-50 border-b-2 border-black font-bold">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            <table className="w-full text-md bg-white dark:bg-gray-800 dark:text-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-700 border-b-2 border-black dark:border-gray-600 font-bold">
                     {table.getHeaderGroups().map(hg => (
                         <tr key={hg.id}>
                             {hg.headers.map(header => (
                                 <th
                                     key={header.id}
                                     colSpan={header.colSpan}
-                                    className={`select-none justify-center ${header.column.getCanSort() && ready ? 'hover:bg-gray-200' : ''} px-4`}
+                                    className={`select-none justify-center ${header.column.getCanSort() && ready ? 'hover:bg-gray-200 dark:hover:bg-gray-600' : ''} px-4`}
                                     onClick={header.column.getToggleSortingHandler()}
                                 >
                                     <div className={`flex items-center gap-1 ${header.column.getIndex() == 0 ? "justify-start" : "justify-center"}`}>
@@ -156,14 +156,14 @@ export const ProcessTable = () => {
                 {error ?
                     <tbody >
                         <tr>
-                            <td colSpan={columns.length} className="px-10 py-4 text-center text-red-600">
+                            <td colSpan={columns.length} className="px-10 py-4 text-center text-red-600 dark:text-red-400">
                                 Error loading processes: {error.message}
                             </td>
                         </tr>
                     </tbody>
-                    : <tbody>
+                    : <tbody className="dark:divide-gray-700">
                         {table.getRowModel().rows.map(row => (
-                            <tr key={row.id} className="hover:bg-gray-50">
+                            <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 {row.getVisibleCells().map(cell => (
                                     <td key={cell.id} className={`px-4 py-1 ${cell.column.getIndex() == 0 ? "text-left" : "text-center"}`}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

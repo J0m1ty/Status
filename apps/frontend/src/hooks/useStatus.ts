@@ -3,9 +3,9 @@ import { useProcesses } from "../store/useProcesses";
 import { useSSE } from "./useSSE";
 
 export const useStatus = () => {
-    const [ lastSize, setLastSize ] = useState(4);
+    const [ lastSize, setLastSize ] = useState(5);
     const { set, setLoading, setError } = useProcesses();
-    const { data, status } = useSSE({ url: '/api/events', eventName: 'status' });
+    const { data, status } = useSSE({ url: '/events', eventName: 'status' });
 
     useEffect(() => {
         if (data) {

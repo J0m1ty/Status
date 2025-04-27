@@ -12,7 +12,7 @@ export const Header = () => {
     const connected = !loading && !error;
 
     return (
-        <header className="flex flex-row justify-between items-center w-full bg-white border-b-2 dark:border-neutral-100  py-2 px-2 dark:bg-neutral-900 dark:text-white">
+        <header className="flex flex-row justify-between items-center w-full bg-white border-b-2 dark:border-neutral-100  py-2 px-2 dark:dark:bg-gray-800 dark:text-white">
             <div className="flex-1 flex items-center">
                 <h1 className="text-xl font-bold">jomity.net</h1>
             </div>
